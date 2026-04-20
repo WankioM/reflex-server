@@ -41,6 +41,7 @@ export const env = {
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 
   // Credits
-  freeSignupCredits: parseInt(process.env.FREE_SIGNUP_CREDITS || '50', 10),
+  freeSignupCredits: parseInt(process.env.FREE_SIGNUP_CREDITS || '20', 10),
+  anonymousCreditsPerIp: parseInt(process.env.ANONYMOUS_CREDITS_PER_IP || '5', 10),
   creditsPerAssistantCall: parseInt(process.env.CREDITS_PER_ASSISTANT_CALL || '1', 10),
 };

@@ -9,6 +9,15 @@ export const Errors = {
   AUTH_FORBIDDEN: () =>
     new AppError('You do not have permission to access this resource.', 403, 'AUTH_FORBIDDEN'),
 
+  // Anonymous credits
+  ANONYMOUS_CREDITS_EXHAUSTED: (maxCredits: number, signupCredits: number) =>
+    new AppError(
+      `You've used all ${maxCredits} free queries. Sign up for ${signupCredits} more free credits.`,
+      402,
+      'ANONYMOUS_CREDITS_EXHAUSTED',
+      'Show signup prompt'
+    ),
+
   // Credits
   CREDITS_EXHAUSTED: () =>
     new AppError(
