@@ -3,7 +3,8 @@ import type { UserRole, SubscriptionStatus, SubscriptionTier } from '../types';
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
-  googleId: string;
+  googleId: string | null;
+  githubId: string | null;
   email: string;
   displayName: string;
   avatar: string;
@@ -44,7 +45,8 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>(
   {
-    googleId: { type: String, required: true, unique: true },
+    googleId: { type: String, default: null, sparse: true, unique: true },
+    githubId: { type: String, default: null, sparse: true, unique: true },
     email: { type: String, required: true, unique: true },
     displayName: { type: String, required: true },
     avatar: { type: String, default: '' },

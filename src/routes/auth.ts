@@ -20,31 +20,42 @@ function generateTokens(userId: string, role: string) {
   return { accessToken, refreshToken };
 }
 
-router.get('/google', authLimiter, passport.authenticate('google', { scope: ['profile', 'email'] }));
+// Shared callback handler for both Google and GitHub
+async function handleOAuthCallback(req: Request, res: Response) {
+  const user = req.user as InstanceType<typeof User>;
 
+  if (!user.freeCreditsGranted) {
+    await grantSignupBonus(user._id.toString(), env.freeSignupCredits);
+  }
+
+  const { accessToken, refreshToken } = generateTokens(user._id.toString(), user.role);
+
+  const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+  await RefreshToken.create({
+    userId: user._id,
+    token: hashedToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
+  res.redirect(
+    `${env.frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
+  );
+}
+
+// Google OAuth
+router.get('/google', authLimiter, passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get(
   '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: `${env.frontendUrl}/login?error=auth_failed` }),
-  async (req: Request, res: Response) => {
-    const user = req.user as InstanceType<typeof User>;
+  handleOAuthCallback
+);
 
-    if (!user.freeCreditsGranted) {
-      await grantSignupBonus(user._id.toString(), env.freeSignupCredits);
-    }
-
-    const { accessToken, refreshToken } = generateTokens(user._id.toString(), user.role);
-
-    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
-    await RefreshToken.create({
-      userId: user._id,
-      token: hashedToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-
-    res.redirect(
-      `${env.frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
-    );
-  }
+// GitHub OAuth
+router.get('/github', authLimiter, passport.authenticate('github', { scope: ['user:email'] }));
+router.get(
+  '/github/callback',
+  passport.authenticate('github', { session: false, failureRedirect: `${env.frontendUrl}/login?error=auth_failed` }),
+  handleOAuthCallback
 );
 
 router.post('/refresh', async (req: Request, res: Response) => {

@@ -14,6 +14,11 @@
 **Description:** Initiates Google OAuth flow. Redirect the user's browser here.
 **Response:** Redirects to Google login, then back to `{FRONTEND_URL}/auth/callback?accessToken=xxx&refreshToken=xxx`
 
+### `GET /api/auth/github`
+**Auth:** Public
+**Description:** Initiates GitHub OAuth flow. Redirect the user's browser here.
+**Response:** Redirects to GitHub login, then back to `{FRONTEND_URL}/auth/callback?accessToken=xxx&refreshToken=xxx`
+
 ### `POST /api/auth/refresh`
 **Auth:** Public
 **Body:**
