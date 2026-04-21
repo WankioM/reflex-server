@@ -20,6 +20,22 @@ function generateTokens(userId: string, role: string) {
   return { accessToken, refreshToken };
 }
 
+// Resolve the frontend URL — use redirect_origin from OAuth state if available, otherwise env default
+function resolveFrontendUrl(req: Request): string {
+  try {
+    const state = req.query.state as string | undefined;
+    if (state) {
+      const parsed = JSON.parse(Buffer.from(state, 'base64').toString());
+      if (parsed.redirect_origin) {
+        return parsed.redirect_origin;
+      }
+    }
+  } catch {
+    // Invalid state — fall through to default
+  }
+  return env.frontendUrl;
+}
+
 // Shared callback handler for both Google and GitHub
 async function handleOAuthCallback(req: Request, res: Response) {
   const user = req.user as InstanceType<typeof User>;
@@ -37,13 +53,29 @@ async function handleOAuthCallback(req: Request, res: Response) {
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
+  const frontendUrl = resolveFrontendUrl(req);
   res.redirect(
-    `${env.frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
+    `${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
   );
 }
 
+// Encode redirect_origin into base64 state for OAuth round-trip
+function buildOAuthState(req: Request): string {
+  const redirectOrigin = req.query.redirect_origin as string | undefined;
+  if (redirectOrigin) {
+    return Buffer.from(JSON.stringify({ redirect_origin: redirectOrigin })).toString('base64');
+  }
+  return '';
+}
+
 // Google OAuth
-router.get('/google', authLimiter, passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', authLimiter, (req: Request, res: Response, next) => {
+  const state = buildOAuthState(req);
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    ...(state && { state }),
+  })(req, res, next);
+});
 router.get(
   '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: `${env.frontendUrl}/login?error=auth_failed` }),
@@ -52,7 +84,13 @@ router.get(
 
 // GitHub OAuth — only expose routes if strategy is registered
 if (env.githubClientId && env.githubClientSecret) {
-  router.get('/github', authLimiter, passport.authenticate('github', { scope: ['user:email'] }));
+  router.get('/github', authLimiter, (req: Request, res: Response, next) => {
+    const state = buildOAuthState(req);
+    passport.authenticate('github', {
+      scope: ['user:email'],
+      ...(state && { state }),
+    })(req, res, next);
+  });
   router.get(
     '/github/callback',
     passport.authenticate('github', { session: false, failureRedirect: `${env.frontendUrl}/login?error=auth_failed` }),
