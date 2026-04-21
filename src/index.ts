@@ -25,7 +25,22 @@ const app = express();
 
 // Global middleware
 app.use(helmet());
-app.use(cors({ origin: env.frontendUrl, credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowed = [
+      env.frontendUrl,
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin || allowed.includes(origin)) {
+      callback(null, origin || true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+}));
 app.use(cookieParser());
 
 // Stripe webhook needs raw body — must come before express.json()
