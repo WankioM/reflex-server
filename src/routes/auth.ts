@@ -50,13 +50,27 @@ router.get(
   handleOAuthCallback
 );
 
-// GitHub OAuth
-router.get('/github', authLimiter, passport.authenticate('github', { scope: ['user:email'] }));
-router.get(
-  '/github/callback',
-  passport.authenticate('github', { session: false, failureRedirect: `${env.frontendUrl}/login?error=auth_failed` }),
-  handleOAuthCallback
-);
+// GitHub OAuth — only expose routes if strategy is registered
+if (env.githubClientId && env.githubClientSecret) {
+  router.get('/github', authLimiter, passport.authenticate('github', { scope: ['user:email'] }));
+  router.get(
+    '/github/callback',
+    passport.authenticate('github', { session: false, failureRedirect: `${env.frontendUrl}/login?error=auth_failed` }),
+    handleOAuthCallback
+  );
+} else {
+  router.get('/github', (_req: Request, res: Response) => {
+    res.status(503).json({
+      error: 'GitHub OAuth is not configured.',
+      code: 'GITHUB_NOT_CONFIGURED',
+      debug: {
+        hasClientId: !!process.env.GITHUB_CLIENT_ID,
+        hasClientSecret: !!process.env.GITHUB_CLIENT_SECRET,
+        clientIdLength: (process.env.GITHUB_CLIENT_ID || '').length,
+      },
+    });
+  });
+}
 
 router.post('/refresh', async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
