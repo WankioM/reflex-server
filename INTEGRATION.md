@@ -220,6 +220,112 @@
 
 ---
 
+## Projects
+
+### `GET /api/projects`
+**Auth:** Required
+**Query:** `?status=active&page=1&limit=20`
+**200 Response:**
+```json
+{
+  "data": [
+    {
+      "_id": "string",
+      "name": "My Calculator App",
+      "description": "A simple calculator built with Reflex",
+      "source": "manual",
+      "githubRepo": null,
+      "status": "active",
+      "conversationCount": 3,
+      "createdAt": "date",
+      "updatedAt": "date"
+    }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 2, "totalPages": 1 }
+}
+```
+
+### `POST /api/projects`
+**Auth:** Required
+**Body:**
+```json
+{ "name": "string (required)", "description": "string (optional)", "source": "manual | github", "githubRepo": "owner/repo (optional, github source only)" }
+```
+**201 Response:**
+```json
+{ "data": { "_id": "string", "name": "string", "description": "", "source": "manual", "githubRepo": null, "status": "active", ... } }
+```
+**400 Response:** `VALIDATION_ERROR` - Project name is required
+
+### `GET /api/projects/:id`
+**Auth:** Required
+**200 Response:**
+```json
+{
+  "data": {
+    "_id": "string",
+    "name": "string",
+    "description": "string",
+    "source": "manual",
+    "githubRepo": null,
+    "status": "active",
+    "conversations": [
+      { "_id": "string", "title": "string", "status": "active", "messageCount": 4, "lastMessageAt": "date" }
+    ],
+    "createdAt": "date",
+    "updatedAt": "date"
+  }
+}
+```
+**404 Response:** `NOT_FOUND` - Project not found
+
+### `PATCH /api/projects/:id`
+**Auth:** Required
+**Body:**
+```json
+{ "name": "string", "description": "string", "status": "active | archived" }
+```
+**200 Response:** Updated project object
+**400 Response:** `VALIDATION_ERROR` - No valid fields to update
+**404 Response:** `NOT_FOUND` - Project not found
+
+### `DELETE /api/projects/:id`
+**Auth:** Required
+**Description:** Soft delete — sets status to `archived`
+**200 Response:**
+```json
+{ "message": "Project archived." }
+```
+**404 Response:** `NOT_FOUND` - Project not found
+
+### `POST /api/projects/:id/conversations`
+**Auth:** Required
+**Body:**
+```json
+{ "title": "string (optional)" }
+```
+**201 Response:**
+```json
+{ "data": { "_id": "string", "projectId": "string", "title": "New conversation", "status": "active", ... } }
+```
+**404 Response:** `NOT_FOUND` - Project not found (or archived)
+
+### `GET /api/projects/:id/conversations`
+**Auth:** Required
+**Query:** `?page=1&limit=20`
+**200 Response:**
+```json
+{
+  "data": [
+    { "_id": "string", "projectId": "string", "title": "string", "status": "active", "messageCount": 4, "lastMessageAt": "date" }
+  ],
+  "pagination": { "page": 1, "limit": 20, "total": 3, "totalPages": 1 }
+}
+```
+**404 Response:** `NOT_FOUND` - Project not found
+
+---
+
 ## Assistant
 
 ### `POST /api/assistant/chat`

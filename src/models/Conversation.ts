@@ -4,6 +4,7 @@ import type { ConversationStatus } from '../types';
 export interface IConversation extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
   title: string;
   status: ConversationStatus;
   messageCount: number;
@@ -17,6 +18,7 @@ export interface IConversation extends Document {
 const conversationSchema = new Schema<IConversation>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    projectId: { type: Schema.Types.ObjectId, ref: 'Project', default: null },
     title: { type: String, default: 'New conversation' },
     status: { type: String, enum: ['active', 'archived', 'deleted'], default: 'active' },
     messageCount: { type: Number, default: 0 },
@@ -29,5 +31,6 @@ const conversationSchema = new Schema<IConversation>(
 
 conversationSchema.index({ userId: 1, lastMessageAt: -1 });
 conversationSchema.index({ userId: 1, status: 1 });
+conversationSchema.index({ projectId: 1, lastMessageAt: -1 });
 
 export const Conversation = mongoose.model<IConversation>('Conversation', conversationSchema);

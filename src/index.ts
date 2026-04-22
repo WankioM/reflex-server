@@ -20,6 +20,7 @@ import assistantRoutes from './routes/assistant';
 import adminRoutes from './routes/admin';
 import teamRoutes from './routes/team';
 import paymentRoutes from './routes/payments';
+import projectRoutes from './routes/projects';
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api/assistant', assistantRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
