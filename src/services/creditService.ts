@@ -17,19 +17,26 @@ interface CreditOperation {
 }
 
 // Deduct credits atomically — returns new balance or throws
+// allowNegative: if true, allows balance to go below 0 (for post-response token-based deduction)
 export async function deductCredits(
   userId: string,
   amount: number,
   description: string,
-  conversationId?: string
+  conversationId?: string,
+  allowNegative: boolean = false
 ): Promise<number> {
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
 
+    const query: any = { _id: userId, deletedAt: null };
+    if (!allowNegative) {
+      query.credits = { $gte: amount };
+    }
+
     const user = await User.findOneAndUpdate(
-      { _id: userId, credits: { $gte: amount }, deletedAt: null },
+      query,
       { $inc: { credits: -amount } },
       { new: true, session }
     );
