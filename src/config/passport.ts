@@ -56,12 +56,18 @@ if (env.githubClientId && env.githubClientSecret) {
         callbackURL: env.githubCallbackUrl,
         scope: ['user:email'],
       },
-      async (_accessToken: string, _refreshToken: string, profile: any, done: any) => {
+      async (accessToken: string, _refreshToken: string, profile: any, done: any) => {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) {
             return done(new Error('No email provided by GitHub. Make sure your GitHub email is public or grant email scope.'));
           }
+
+          const githubConnection = {
+            'connections.github.accessToken': accessToken,
+            'connections.github.username': profile.username || null,
+            'connections.github.connectedAt': new Date(),
+          };
 
           let user = await User.findOne({ githubId: profile.id });
 
@@ -71,6 +77,7 @@ if (env.githubClientId && env.githubClientSecret) {
             if (user) {
               user.githubId = profile.id;
               user.avatar = user.avatar || profile.photos?.[0]?.value || '';
+              user.set(githubConnection);
               await user.save();
             } else {
               user = await User.create({
@@ -79,8 +86,19 @@ if (env.githubClientId && env.githubClientSecret) {
                 displayName: profile.displayName || profile.username || email.split('@')[0],
                 avatar: profile.photos?.[0]?.value || '',
                 role: 'free',
+                connections: {
+                  github: {
+                    accessToken,
+                    username: profile.username || null,
+                    connectedAt: new Date(),
+                  },
+                },
               });
             }
+          } else {
+            // Existing user — update connection details on every login
+            user.set(githubConnection);
+            await user.save();
           }
 
           return done(null, user);
