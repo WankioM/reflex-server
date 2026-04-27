@@ -1,0 +1,20 @@
+# Nixpacks build configuration for reflex-server.
+#
+# Why this file exists:
+#   The Tier 1 validation pipeline shells out to `clang -fsyntax-only` to
+#   syntax-check AI-generated Reflex C++ before showing it to users
+#   (see Projects/Reflex/ReflexVirtual/build-validation-tier1.md).
+#   The Railway runtime image needs clang available on $PATH.
+#
+# Why aptPkgs with "..." (and not nixPkgs):
+#   The "..." literal is Nixpacks' additive merge — it preserves the
+#   auto-detected Node/TypeScript setup and just appends clang. Pinning
+#   nixPkgs explicitly would override Node version detection and risk
+#   changing runtime behaviour. We have no `engines` field in package.json,
+#   so we let Nixpacks keep choosing Node and only inject what's missing.
+#
+# Expected clang version on Railway's Ubuntu base: clang 14+ (Ubuntu 22.04)
+# or clang 18+ (Ubuntu 24.04). Either is fine for C++20 validation.
+
+[phases.setup]
+aptPkgs = ["...", "clang"]
