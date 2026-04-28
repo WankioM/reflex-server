@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import type { Request } from 'express';
 
 // General API rate limit — per IP
@@ -8,7 +8,7 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Slow down — try again in a few seconds.', code: 'RATE_LIMITED' },
-  keyGenerator: (req: Request) => req.ip || 'unknown',
+  keyGenerator: (req: Request) => ipKeyGenerator(req.ip || 'unknown'),
   skip: (req: Request) => {
     return req.authUser?.role === 'team' || req.authUser?.role === 'admin';
   },
@@ -21,7 +21,8 @@ export const assistantLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Slow down — try again in a few seconds.', code: 'RATE_LIMITED' },
-  keyGenerator: (req: Request) => req.authUser?.userId || req.ip || 'unknown',
+  keyGenerator: (req: Request) =>
+    req.authUser?.userId || ipKeyGenerator(req.ip || 'unknown'),
   skip: (req: Request) => {
     return req.authUser?.role === 'team' || req.authUser?.role === 'admin';
   },
