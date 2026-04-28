@@ -1,0 +1,5 @@
+# Shell scripts must keep LF endings — Docker's /bin/sh chokes on CRLF.
+*.sh text eol=lf
+
+# Dockerfile runs inside a Linux container and is read by docker build.
+Dockerfile text eol=lf
