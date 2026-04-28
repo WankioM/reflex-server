@@ -21,7 +21,6 @@ import adminRoutes from './routes/admin';
 import teamRoutes from './routes/team';
 import paymentRoutes from './routes/payments';
 import projectRoutes from './routes/projects';
-import validateRoutes from './routes/validate';
 
 const app = express();
 
@@ -63,7 +62,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/validate', validateRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
