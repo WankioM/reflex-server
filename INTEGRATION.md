@@ -535,6 +535,48 @@
 
 ---
 
+## Validate (requires `admin` role — internal-only initially)
+
+Tier 1 build validator: runs `clang -fsyntax-only` against Reflex C++ to catch
+typos, type errors, and undefined identifiers before any real build. Spec:
+`Projects/Reflex/ReflexVirtual/build-validation-tier1.md`.
+
+Requires `clang` on PATH (`CLANG_PATH` env override) and the Reflex public
+headers at `REFLEX_INCLUDE_PATH` (default `/app/vendor/reflex-include`).
+
+### `POST /api/validate`
+**Auth:** `admin` role
+**Body:** (provide either `code` or `files`)
+```json
+{
+  "code": "string (single-file shorthand, written as entry.cpp)",
+  "files": [{ "name": "entry.cpp", "content": "..." }],
+  "bootstrapType": "APP | VM_APP | AUDIOAPP | AUDIOPLUGIN | LIBRARY"
+}
+```
+- `bootstrapType` defaults to `APP`. It maps to `-DREFLEX_BOOTSTRAP_TYPE_<type>`.
+- File names are restricted to `[A-Za-z0-9_.-]+` to prevent traversal.
+
+**200 Response:**
+```json
+{
+  "ok": true,
+  "errors": [
+    { "file": "view.cpp", "line": 42, "col": 18,
+      "severity": "error", "message": "no member named 'h' in 'Reflex::Point<float>'" }
+  ],
+  "warnings": [{ "file": "...", "line": 0, "col": 0, "severity": "warning", "message": "..." }],
+  "exitCode": 0,
+  "stderr": "raw clang output for debugging"
+}
+```
+- `ok` is `true` iff `errors.length === 0`. Warnings do not affect `ok`.
+- `exitCode` is informational; trust `ok`.
+
+**400 Response:** `VALIDATION_ERROR` — bad input (missing `code`/`files`, unsafe filename, invalid `bootstrapType`).
+
+---
+
 ## Error Codes Reference
 
 | Code | Status | Message |

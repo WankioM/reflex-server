@@ -1,0 +1,12 @@
+# Keep build context lean and never ship secrets in image layers.
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+.railway
+*.md
+.vscode
+.idea
