@@ -1,5 +1,5 @@
 // Client wrapper for the reflex-validator sidecar (runs on Mac Mini, reached
-// over Tailscale). Stage 1b of the Tier 1 validation pipeline.
+// over Tailscale). Stage 1b/1c of the Tier 1 validation pipeline.
 //
 // NOT yet wired into /api/chat — that's Stage 3 (shadow mode). This module
 // just exposes an importable function.
@@ -7,6 +7,13 @@
 // Graceful degradation: when the validator is unreachable, this returns
 // { ok: null, skipped: true, reason } so callers can decide whether to ship
 // unvalidated rather than blowing up.
+//
+// On Railway the container reaches the Mac Mini via Tailscale userspace
+// networking — set VALIDATOR_HTTP_PROXY=http://localhost:1055 so this
+// wrapper routes its fetch() through the local Tailscale proxy. In dev
+// (or with a public-IP validator) leave VALIDATOR_HTTP_PROXY unset.
+
+import { fetch, ProxyAgent, Dispatcher } from 'undici';
 
 export type BootstrapType = 'APP' | 'VM_APP' | 'AUDIOAPP' | 'LIBRARY';
 
@@ -55,6 +62,16 @@ function skipped(reason: string): ValidationSkipped {
   return { ok: null, skipped: true, reason };
 }
 
+let cachedProxyUrl: string | undefined;
+let cachedDispatcher: Dispatcher | undefined;
+
+function dispatcherFor(proxyUrl: string | undefined): Dispatcher | undefined {
+  if (proxyUrl === cachedProxyUrl) return cachedDispatcher;
+  cachedProxyUrl = proxyUrl;
+  cachedDispatcher = proxyUrl ? new ProxyAgent(proxyUrl) : undefined;
+  return cachedDispatcher;
+}
+
 async function postOnce(
   url: string,
   token: string,
@@ -72,6 +89,7 @@ async function postOnce(
       },
       body: JSON.stringify(body),
       signal: ctrl.signal,
+      dispatcher: dispatcherFor(process.env.VALIDATOR_HTTP_PROXY),
     });
     const json = await res.json().catch(() => ({}));
     return { status: res.status, json };
