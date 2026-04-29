@@ -42,10 +42,30 @@ router.post('/', validatorRelayAuth, async (req: Request, res: Response) => {
     return;
   }
 
+  const fileCount = Array.isArray(files) ? files.length : 0;
+  const codeChars = code.length;
+  console.log(
+    `[validate] req: code=${codeChars}chars files=${fileCount} bootstrapType=${bootstrapType ?? 'APP'}`,
+  );
+
   const result = await validate(code, {
     files: files as InputFile[] | undefined,
     bootstrapType: bootstrapType as BootstrapType | undefined,
   });
+
+  // Structured log of the wrapper's verdict — short summary, never the
+  // full stderr (could be huge). First error message only, truncated.
+  if (result.skipped) {
+    console.log(`[validate] resp: SKIPPED reason="${result.reason}"`);
+  } else {
+    const firstErr = result.errors[0];
+    const firstErrSummary = firstErr
+      ? ` firstError="${firstErr.file}:${firstErr.line}:${firstErr.col}: ${firstErr.message.slice(0, 120)}"`
+      : '';
+    console.log(
+      `[validate] resp: ok=${result.ok} errors=${result.errors.length} warnings=${result.warnings.length} elapsedMs=${result.elapsedMs} pchUsed=${result.pchUsed}${firstErrSummary}`,
+    );
+  }
 
   // Pass through wrapper output verbatim. 200 even for ok:false or
   // skipped:true — the relay completed successfully; the validator's
