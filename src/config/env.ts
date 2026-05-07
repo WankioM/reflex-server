@@ -42,6 +42,11 @@ export const env = {
   // Encryption
   encryptionKey: requireEnv('ENCRYPTION_KEY'),
 
+  // Server-to-server shared secret for /api/internal/* endpoints.
+  // Same value is set on Vercel (reflexweb) so the Next.js chat handler
+  // can call our internal endpoints without exposing them to browsers.
+  internalApiSecret: requireEnv('INTERNAL_API_SECRET'),
+
   // Frontend
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 
