@@ -6,12 +6,19 @@ import { Errors } from '../errors/errorCodes';
 export async function storeByoKey(userId: string, apiKey: string): Promise<void> {
   const { encrypted, iv } = encrypt(apiKey);
 
+  // Masked preview shown back to the user so they can recognise which
+  // key they saved (e.g. "sk-ant-…xy7z"). Safe to expose: 7 + 4 chars
+  // out of a 100+ char key leaks nothing actionable. Computed here so
+  // /me responses don't have to decrypt on every request.
+  const preview = `${apiKey.slice(0, 7)}…${apiKey.slice(-4)}`;
+
   await User.updateOne(
     { _id: userId },
     {
       'byoKey.encryptedKey': encrypted,
       'byoKey.iv': iv,
       'byoKey.enabled': true,
+      'byoKey.preview': preview,
     }
   );
 }
@@ -34,6 +41,7 @@ export async function removeByoKey(userId: string): Promise<void> {
       'byoKey.encryptedKey': null,
       'byoKey.iv': null,
       'byoKey.enabled': false,
+      'byoKey.preview': null,
     }
   );
 }

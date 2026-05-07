@@ -19,6 +19,10 @@ export interface IUser extends Document {
     encryptedKey: string | null;
     iv: string | null;
     enabled: boolean;
+    // Masked label like "sk-ant-…xy7z" — sent to clients so users can
+    // identify which key they saved without ever exposing the plaintext.
+    // Computed once at storeByoKey time; nulled in removeByoKey.
+    preview: string | null;
   };
   connections: {
     github: {
@@ -61,6 +65,7 @@ const userSchema = new Schema<IUser>(
       encryptedKey: { type: String, default: null },
       iv: { type: String, default: null },
       enabled: { type: Boolean, default: false },
+      preview: { type: String, default: null },
     },
     connections: {
       github: {
