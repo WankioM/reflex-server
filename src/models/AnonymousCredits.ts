@@ -13,7 +13,9 @@ const anonymousCreditsSchema = new Schema<IAnonymousCredits>(
   {
     ip: { type: String, required: true, unique: true },
     creditsUsed: { type: Number, default: 0 },
-    maxCredits: { type: Number, default: 5 },
+    // No default — env.anonymousCreditsPerIp is the single source of truth.
+    // Routes always provide this via $setOnInsert on the upsert.
+    maxCredits: { type: Number, required: true },
     lastUsedAt: { type: Date, default: Date.now },
   },
   { timestamps: { createdAt: true, updatedAt: false } }

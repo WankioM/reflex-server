@@ -18,7 +18,10 @@ const paymentSchema = new Schema<IPayment>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     stripePaymentIntentId: { type: String, required: true, unique: true },
-    stripeInvoiceId: { type: String, default: null },
+    // Sparse + unique → race-safe idempotency for subscription invoice
+    // webhooks (one-off purchases leave this null and are deduped by
+    // stripePaymentIntentId's existing unique index).
+    stripeInvoiceId: { type: String, default: null, unique: true, sparse: true },
     type: { type: String, enum: ['one_time', 'subscription'], required: true },
     amount: { type: Number, required: true },
     currency: { type: String, default: 'usd' },
