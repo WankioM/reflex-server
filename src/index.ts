@@ -34,8 +34,11 @@ app.use(cors({
       'http://localhost:3000',
       'http://localhost:3001',
     ];
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin || allowed.includes(origin)) {
+    // Vercel preview deployments under wankioms-projects for the reflexweb project.
+    // Matches both commit-hash URLs (reflexweb-abc123-...) and branch aliases
+    // (reflexweb-git-<branch>-...).
+    const vercelPreviewRegex = /^https:\/\/reflexweb-[a-z0-9-]+-wankioms-projects\.vercel\.app$/;
+    if (!origin || allowed.includes(origin) || vercelPreviewRegex.test(origin)) {
       callback(null, origin || true);
     } else {
       callback(new Error(`CORS: origin ${origin} not allowed`));
