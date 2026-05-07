@@ -2,7 +2,7 @@
 #
 # Why a Dockerfile (Railway uses Railpack by default):
 #   The Tier 1 validation pipeline (Stage 1c) needs reflex-server on
-#   Railway to reach the Mac Mini validator at 100.82.195.40:8080 — but
+#   Railway to reach the Mac Mini validator at 100.70.35.83:8080 — but
 #   that IP is only routable inside Tracy's tailnet. Railway containers
 #   don't have NET_ADMIN / TUN, so the only way in is Tailscale's
 #   userspace networking + a SOCKS5/HTTP proxy on localhost.
@@ -17,7 +17,7 @@
 # Required Railway env (in addition to the existing reflex-server vars):
 #   TS_AUTHKEY            — ephemeral, reusable, tag:railway from
 #                           https://login.tailscale.com/admin/settings/keys
-#   VALIDATOR_URL         — http://100.82.195.40:8080
+#   VALIDATOR_URL         — http://100.70.35.83:8080
 #   VALIDATOR_TOKEN       — same token Mac Mini's ~/reflex-validator/.env has
 #   VALIDATOR_HTTP_PROXY  — http://localhost:1055
 #
