@@ -119,6 +119,71 @@ router.post('/webhook', async (req: Request, res: Response) => {
       break;
     }
 
+    case 'invoice.payment_succeeded': {
+      // Fires once per billing cycle (initial activation + each monthly
+      // renewal). This is the right hook for "money cleared, deliver the
+      // entitlement" — `customer.subscription.updated` would over-fire.
+      const invoice = event.data.object;
+      const customerId = invoice.customer as string;
+      const invoiceId = invoice.id;
+      const subscriptionId = (invoice as any).subscription;
+
+      // Only handle subscription invoices. One-off credit purchases are
+      // handled by `checkout.session.completed` above.
+      if (!subscriptionId) {
+        break;
+      }
+
+      const user = await User.findOne({
+        'subscription.stripeCustomerId': customerId,
+      });
+      if (!user) {
+        console.error(
+          `[stripe] invoice.payment_succeeded for unknown customer ${customerId}`,
+        );
+        break;
+      }
+
+      // Idempotency: Stripe occasionally re-delivers webhooks. If we've
+      // already recorded this invoice, skip credit grant.
+      const existing = await Payment.findOne({ stripeInvoiceId: invoiceId });
+      if (existing) {
+        console.log(
+          `[stripe] invoice ${invoiceId} already credited — skipping duplicate webhook`,
+        );
+        break;
+      }
+
+      // Placeholder allocation. See PLAN-2026-05-07 "Credits & Subscription"
+      // — exact figure pending Tracy's cost/margin math.
+      const PRO_MONTHLY_CREDITS = 100;
+
+      await Payment.create({
+        userId: user._id,
+        stripePaymentIntentId:
+          ((invoice as any).payment_intent as string) || invoiceId,
+        stripeInvoiceId: invoiceId,
+        type: 'subscription',
+        amount: invoice.amount_paid || 0,
+        currency: invoice.currency || 'usd',
+        creditsGranted: PRO_MONTHLY_CREDITS,
+        status: 'succeeded',
+      });
+
+      await addCredits({
+        userId: user._id.toString(),
+        amount: PRO_MONTHLY_CREDITS,
+        type: 'purchase',
+        description: 'Pro monthly grant',
+        metadata: { stripePaymentId: invoiceId },
+      });
+
+      console.log(
+        `[stripe] Granted ${PRO_MONTHLY_CREDITS} credits to user ${user._id} for invoice ${invoiceId}`,
+      );
+      break;
+    }
+
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
       const customerId = subscription.customer as string;

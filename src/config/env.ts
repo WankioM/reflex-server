@@ -52,7 +52,7 @@ export const env = {
 
   // Credits
   freeSignupCredits: parseInt(process.env.FREE_SIGNUP_CREDITS || '20', 10),
-  anonymousCreditsPerIp: parseInt(process.env.ANONYMOUS_CREDITS_PER_IP || '5', 10),
+  anonymousCreditsPerIp: parseInt(process.env.ANONYMOUS_CREDITS_PER_IP || '3', 10),
   creditsPerAssistantCall: parseInt(process.env.CREDITS_PER_ASSISTANT_CALL || '1', 10),
 };
 
