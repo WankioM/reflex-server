@@ -55,3 +55,21 @@ export const env = {
   anonymousCreditsPerIp: parseInt(process.env.ANONYMOUS_CREDITS_PER_IP || '5', 10),
   creditsPerAssistantCall: parseInt(process.env.CREDITS_PER_ASSISTANT_CALL || '1', 10),
 };
+
+// Boot-time secret validation. Catches malformed env values at startup
+// (server fails to boot) instead of at first request (cryptic runtime
+// error mid-flow).
+
+if (!/^[0-9a-fA-F]{64}$/.test(env.encryptionKey)) {
+  throw new Error(
+    `ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes for AES-256-GCM). ` +
+      `Got ${env.encryptionKey.length} chars. Generate with: openssl rand -hex 32`,
+  );
+}
+
+if (env.internalApiSecret.length < 32) {
+  throw new Error(
+    `INTERNAL_API_SECRET must be at least 32 characters. ` +
+      `Got ${env.internalApiSecret.length}. Generate with: openssl rand -hex 32`,
+  );
+}
